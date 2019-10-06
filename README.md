@@ -15,8 +15,9 @@ Other platforms are download from github release page.
 
 ## Requirements
 
-- port forwarding with ssm-agent must be possible
-- ec2-instance-connect must be possible
+- `ec2-instance-connect` must be possible.
+- `port forwarding with amazon-ssm-agent` must be possible
+- `session-manager-plugin` command.
 
 ## Usage
 
