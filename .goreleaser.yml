@@ -1,0 +1,40 @@
+before:
+  hooks:
+    - go mod download
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+    ldflags:
+      -X github.com/youyo/awssh/cmd.Version={{ .Version }}
+
+archive:
+  replacements:
+    darwin: Darwin
+    linux: Linux
+    windows: Windows
+    amd64: x86_64
+checksum:
+  name_template: 'checksums.txt'
+snapshot:
+  name_template: "{{ .Tag }}-next"
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+brew:
+  github:
+    owner: youyo
+    name: homebrew-tap
+  folder: Formula
+  commit_author:
+    name: goreleaserbot
+    email: goreleaser@carlosbecker.com
+  description: "CLI tool to login ec2 instance"
+  homepage: "https://github.com/youyo/awssh"
+  install: |
+    bin.install "awssh"
+  test: |
+    system "#{bin}/awssh --version"
