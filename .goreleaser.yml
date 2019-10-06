@@ -8,12 +8,12 @@ builds:
     ldflags:
       -X github.com/youyo/awssh/cmd.Version={{ .Version }}
 
-archive:
-  replacements:
-    darwin: Darwin
-    linux: Linux
-    windows: Windows
-    amd64: x86_64
+archives:
+  - id: github release
+    replacements:
+      darwin: Darwin
+      linux: Linux
+      amd64: x86_64
 checksum:
   name_template: 'checksums.txt'
 snapshot:
