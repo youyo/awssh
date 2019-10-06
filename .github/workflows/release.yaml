@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GO111MODULE: on
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.TOKEN_FOR_GITHUB }}
     steps:
       - uses: actions/checkout@master
       - uses: actions/setup-go@master
