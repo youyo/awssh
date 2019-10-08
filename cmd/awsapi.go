@@ -36,14 +36,25 @@ type (
 	Instances []Instance
 )
 
-func NewAwsSession() (sess *session.Session) {
-	sess = session.Must(
-		session.NewSessionWithOptions(
-			session.Options{
-				SharedConfigState: session.SharedConfigEnable,
-			},
-		),
-	)
+func NewAwsSession(profile string) (sess *session.Session) {
+	if profile != "" {
+		sess = session.Must(
+			session.NewSessionWithOptions(
+				session.Options{
+					SharedConfigState: session.SharedConfigEnable,
+					Profile:           profile,
+				},
+			),
+		)
+	} else {
+		sess = session.Must(
+			session.NewSessionWithOptions(
+				session.Options{
+					SharedConfigState: session.SharedConfigEnable,
+				},
+			),
+		)
+	}
 	return sess
 }
 

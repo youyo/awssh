@@ -18,6 +18,7 @@ var (
 	Port            string
 	ExternalCommand string
 	Version         string
+	Profile         string
 )
 
 func init() {}
@@ -47,7 +48,7 @@ func NewCmdRoot() *cobra.Command {
 			}
 
 			if len(args) == 0 {
-				awsSession := NewAwsSession()
+				awsSession := NewAwsSession(Profile)
 				ctx, cancel := context.WithCancel(context.Background())
 				defer cancel()
 
@@ -103,7 +104,8 @@ func NewCmdRoot() *cobra.Command {
 	cmd.Flags().StringVarP(&IdentityFile, "identity-file", "i", "~/.ssh/id_rsa", "")
 	cmd.Flags().StringVarP(&PublicKey, "publickey", "P", "identity-file+'.pub'", "")
 	cmd.Flags().StringVarP(&Port, "port", "p", "22", "")
-	cmd.Flags().StringVarP(&ExternalCommand, "external-command", "c", "", "")
+	cmd.Flags().StringVarP(&ExternalCommand, "external-command", "c", "", "Feature use")
+	cmd.Flags().StringVarP(&Profile, "profile", "", "", "Use a specific profile from your credential file.")
 	return cmd
 }
 
@@ -123,7 +125,7 @@ func execCmdRoot(cmd *cobra.Command, args []string) error {
 		InstanceID = args[0]
 	}
 
-	awsSession := NewAwsSession()
+	awsSession := NewAwsSession(Profile)
 	tokens, sessionManagerParam, err := GetSsmSessionToken(ctx, awsSession, InstanceID, Port, localPort)
 	if err != nil {
 		return err
