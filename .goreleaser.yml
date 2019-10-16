@@ -3,10 +3,11 @@ before:
     - go mod download
 
 builds:
-  - env:
+  - main: ./awssh/main.go
+    env:
       - CGO_ENABLED=0
     ldflags:
-      -X github.com/youyo/awssh/cmd.Version={{ .Version }}
+      -X github.com/youyo/awssh/awssh/cmd.Version={{ .Version }}
 
 archives:
   - id: github release
