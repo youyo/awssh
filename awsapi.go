@@ -1,17 +1,20 @@
-package cmd
+package awssh
 
 import (
 	"context"
 	"encoding/json"
 	"errors"
-	"io/ioutil"
+	"strings"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/ec2"
 	"github.com/aws/aws-sdk-go/service/ec2instanceconnect"
 	"github.com/aws/aws-sdk-go/service/ssm"
-	homedir "github.com/mitchellh/go-homedir"
+	"github.com/manifoldco/promptui"
 )
 
 const (
@@ -36,28 +39,66 @@ type (
 	Instances []Instance
 )
 
-func NewAwsSession() (sess *session.Session) {
-	sess = session.Must(
-		session.NewSessionWithOptions(
-			session.Options{
-				SharedConfigState: session.SharedConfigEnable,
-			},
-		),
-	)
+func newAwsSession(profile string, cache bool, duration time.Duration) (sess *session.Session) {
+	if cache {
+		c, _ := NewCache(CachePath, profile)
+		credsCache, err := c.Load()
+		if err != nil {
+			sess = session.Must(
+				session.NewSessionWithOptions(
+					session.Options{
+						SharedConfigState:       session.SharedConfigEnable,
+						Profile:                 profile,
+						AssumeRoleDuration:      duration,
+						AssumeRoleTokenProvider: stscreds.StdinTokenProvider,
+					},
+				),
+			)
+			credsCache, _ := sess.Config.Credentials.Get()
+			c.Save(&credsCache, duration)
+		} else {
+			creds := credentials.NewStaticCredentialsFromCreds(*credsCache)
+			sess = session.Must(
+				session.NewSessionWithOptions(
+					session.Options{
+						Config: aws.Config{
+							Credentials: creds,
+						},
+						SharedConfigState:       session.SharedConfigEnable,
+						Profile:                 profile,
+						AssumeRoleDuration:      duration,
+						AssumeRoleTokenProvider: stscreds.StdinTokenProvider,
+					},
+				),
+			)
+		}
+	} else {
+		sess = session.Must(
+			session.NewSessionWithOptions(
+				session.Options{
+					SharedConfigState:       session.SharedConfigEnable,
+					Profile:                 profile,
+					AssumeRoleDuration:      duration,
+					AssumeRoleTokenProvider: stscreds.StdinTokenProvider,
+				},
+			),
+		)
+	}
+
 	return sess
 }
 
-func GetRegion(sess *session.Session) (region string) {
+func getRegion(sess *session.Session) (region string) {
 	region = *sess.Config.Region
 	return region
 }
 
-func GetSsmApiUrl(region string) (url string) {
+func getSsmApiUrl(region string) (url string) {
 	url = "https://ssm." + region + ".amazonaws.com"
 	return url
 }
 
-func GetSsmSessionToken(ctx context.Context, sess *session.Session, instanceID, remotePortNumber, localPortNumber string) (tokens, sessionManagerParam string, err error) {
+func getSsmSessionToken(ctx context.Context, sess *session.Session, instanceID, remotePortNumber, localPortNumber string) (tokens, sessionManagerParam string, err error) {
 	ssmClient := ssm.New(sess)
 	ssmInput := &ssm.StartSessionInput{
 		Target:       aws.String(instanceID),
@@ -96,13 +137,13 @@ func GetSsmSessionToken(ctx context.Context, sess *session.Session, instanceID, 
 	return tokens, sessionManagerParam, nil
 }
 
-func SendSSHPublicKey(ctx context.Context, sess *session.Session, instanceID, username, publickeyFilePath string) (err error) {
-	az, err := GetInstanceAZ(ctx, sess, instanceID)
+func sendSSHPublicKey(ctx context.Context, sess *session.Session, instanceID, username, publickeyFilePath string) (err error) {
+	az, err := getInstanceAZ(ctx, sess, instanceID)
 	if err != nil {
 		return err
 	}
 
-	publicKey, err := ReadPublicKey(publickeyFilePath)
+	publicKey, err := readPublicKey(publickeyFilePath)
 	if err != nil {
 		return err
 	}
@@ -123,24 +164,9 @@ func SendSSHPublicKey(ctx context.Context, sess *session.Session, instanceID, us
 	return nil
 }
 
-func ReadPublicKey(filePath string) (publicKey string, err error) {
-	fullPath, err := homedir.Expand(filePath)
-	if err != nil {
-		return "", err
-	}
-
-	publicKeyBytes, err := ioutil.ReadFile(fullPath)
-	if err != nil {
-		return "", err
-	}
-
-	publicKey = string(publicKeyBytes)
-	return publicKey, nil
-}
-
-func GetInstanceAZ(ctx context.Context, sess *session.Session, instanceID string) (az string, err error) {
+func getInstanceAZ(ctx context.Context, sess *session.Session, instanceID string) (az string, err error) {
 	ec2Client := ec2.New(sess)
-	instance, err := GetInstance(ctx, sess, instanceID)
+	instance, err := getInstance(ctx, sess, instanceID)
 	if err != nil {
 		return "", err
 	}
@@ -161,7 +187,7 @@ func GetInstanceAZ(ctx context.Context, sess *session.Session, instanceID string
 	return az, nil
 }
 
-func GetInstance(ctx context.Context, sess *session.Session, instanceID string) (instance *ec2.Instance, err error) {
+func getInstance(ctx context.Context, sess *session.Session, instanceID string) (instance *ec2.Instance, err error) {
 	ec2Client := ec2.New(sess)
 	ec2Input := &ec2.DescribeInstancesInput{
 		InstanceIds: []*string{
@@ -179,7 +205,7 @@ func GetInstance(ctx context.Context, sess *session.Session, instanceID string) 
 	return instance, nil
 }
 
-func GetRunningInstances(ctx context.Context, sess *session.Session) (instances Instances, err error) {
+func getRunningInstances(ctx context.Context, sess *session.Session) (instances Instances, err error) {
 	ec2Client := ec2.New(sess)
 	ec2Input := &ec2.DescribeInstancesInput{
 		Filters: []*ec2.Filter{
@@ -209,5 +235,46 @@ func GetRunningInstances(ctx context.Context, sess *session.Session) (instances 
 			instances = append(instances, i)
 		}
 	}
+	if len(instances) == 0 {
+		err = errors.New("No running instance")
+		return nil, err
+	}
+
 	return instances, nil
+}
+
+func selectInstance(instances Instances) (instanceID string, err error) {
+	prompt := promptui.Select{
+		Label: "Instances",
+		Templates: &promptui.SelectTemplates{
+			Label:    `{{ . | green }}`,
+			Active:   `{{ ">" | blue }} {{ .ID | red }} {{ .TagName | red }}`,
+			Inactive: `{{ .ID | cyan }} {{ .TagName | cyan }}`,
+			Selected: `{{ .ID | yellow }} {{ .TagName | yellow }}`,
+		},
+		Items: instances,
+		Size:  50,
+		Searcher: func(input string, index int) bool {
+			item := instances[index]
+			instanceName := strings.Replace(strings.ToLower(item.TagName), " ", "", -1)
+			instanceID := strings.Replace(strings.ToLower(item.ID), " ", "", -1)
+			input = strings.Replace(strings.ToLower(input), " ", "", -1)
+			if strings.Contains(instanceName, input) {
+				return true
+			} else if strings.Contains(instanceID, input) {
+				return true
+			}
+			return false
+		},
+		StartInSearchMode: true,
+	}
+
+	index, _, err := prompt.Run()
+	if err != nil {
+		return "", err
+	}
+
+	instanceID = instances[index].ID
+
+	return instanceID, nil
 }

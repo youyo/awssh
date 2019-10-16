@@ -1,4 +1,4 @@
-package cmd
+package awssh
 
 import (
 	"io/ioutil"
@@ -9,11 +9,7 @@ import (
 	"golang.org/x/crypto/ssh/terminal"
 )
 
-const (
-	ConnectHost string = "127.0.0.1"
-)
-
-func ReadIdentityFile(filePath string) (sshSigner ssh.Signer, err error) {
+func readIdentityFile(filePath string) (sshSigner ssh.Signer, err error) {
 	fullPath, err := homedir.Expand(filePath)
 	if err != nil {
 		return nil, err
@@ -27,7 +23,7 @@ func ReadIdentityFile(filePath string) (sshSigner ssh.Signer, err error) {
 	return sshSigner, err
 }
 
-func BuildSshClientConfig(username string, sshSigner ssh.Signer) (sshConfig *ssh.ClientConfig, err error) {
+func buildSshClientConfig(username string, sshSigner ssh.Signer) (sshConfig *ssh.ClientConfig, err error) {
 	sshConfig = &ssh.ClientConfig{
 		User: username,
 		Auth: []ssh.AuthMethod{
@@ -38,34 +34,34 @@ func BuildSshClientConfig(username string, sshSigner ssh.Signer) (sshConfig *ssh
 	return sshConfig, nil
 }
 
-func NewSshClient(port string, sshConfig *ssh.ClientConfig) (sshClient *ssh.Client, err error) {
-	sshClient, err = ssh.Dial("tcp", ConnectHost+":"+port, sshConfig)
+func newSshClient(host, port string, sshConfig *ssh.ClientConfig) (sshClient *ssh.Client, err error) {
+	sshClient, err = ssh.Dial("tcp", host+":"+port, sshConfig)
 	return sshClient, err
 }
 
-func NewSshSession(sshClient *ssh.Client) (sshSession *ssh.Session, err error) {
+func newSshSession(sshClient *ssh.Client) (sshSession *ssh.Session, err error) {
 	sshSession, err = sshClient.NewSession()
 	return sshSession, err
 }
 
-func GetFileDescriptor() (fd int) {
+func getFileDescriptor() (fd int) {
 	fd = int(os.Stdin.Fd())
 	return fd
 }
 
 // Put the terminal connected to the given file descriptor into raw mode.
-func MakeFdIntoRawMode(fd int) (state *terminal.State, err error) {
+func makeFdIntoRawMode(fd int) (state *terminal.State, err error) {
 	state, err = terminal.MakeRaw(fd)
 	return state, err
 }
 
 // Get dimensions of the given terminal
-func GetTerminalSize(fd int) (width, height int, err error) {
+func getTerminalSize(fd int) (width, height int, err error) {
 	width, height, err = terminal.GetSize(fd)
 	return width, height, err
 }
 
-func SetPty(sshSession *ssh.Session, term string, width, height int) (err error) {
+func setPty(sshSession *ssh.Session, term string, width, height int) (err error) {
 	modes := ssh.TerminalModes{
 		ssh.ECHO:          1,
 		ssh.TTY_OP_ISPEED: 14400,
@@ -75,19 +71,18 @@ func SetPty(sshSession *ssh.Session, term string, width, height int) (err error)
 	return err
 }
 
-func SetInputOutput(sshSession *ssh.Session, stdout *os.File, stdin *os.File, stderr *os.File) {
+func setInputOutput(sshSession *ssh.Session, stdout *os.File, stdin *os.File, stderr *os.File) {
 	sshSession.Stdout = stdout
 	sshSession.Stdin = stdin
 	sshSession.Stderr = stderr
 }
 
-func GetTerm() (term string) {
-	//term = os.Getenv("TERM")
-	term = "xterm"
+func getTerm() (term string) {
+	term = os.Getenv("TERM")
 	return term
 }
 
-func ExecShell(sshSession *ssh.Session) (err error) {
+func execShell(sshSession *ssh.Session) (err error) {
 	if err = sshSession.Shell(); err != nil {
 		return err
 	}
@@ -95,46 +90,46 @@ func ExecShell(sshSession *ssh.Session) (err error) {
 	return err
 }
 
-func ExecSshLogin(username, port, identityFilePath string) (err error) {
-	sshSigner, err := ReadIdentityFile(identityFilePath)
+func ExecSshLogin(username, host, port, identityFilePath string) (err error) {
+	sshSigner, err := readIdentityFile(identityFilePath)
 	if err != nil {
 		return err
 	}
 
-	sshConfig, err := BuildSshClientConfig(username, sshSigner)
+	sshConfig, err := buildSshClientConfig(username, sshSigner)
 	if err != nil {
 		return err
 	}
 
-	sshClient, err := NewSshClient(port, sshConfig)
+	sshClient, err := newSshClient(host, port, sshConfig)
 	if err != nil {
 		return err
 	}
 
-	sshSession, err := NewSshSession(sshClient)
+	sshSession, err := newSshSession(sshClient)
 	if err != nil {
 		return err
 	}
 	defer sshSession.Close()
 
-	fd := GetFileDescriptor()
-	state, err := MakeFdIntoRawMode(fd)
+	fd := getFileDescriptor()
+	state, err := makeFdIntoRawMode(fd)
 	if err != nil {
 		return err
 	}
 	defer terminal.Restore(fd, state)
 
-	width, height, err := GetTerminalSize(fd)
+	width, height, err := getTerminalSize(fd)
 	if err != nil {
 		return err
 	}
 
-	term := GetTerm()
-	if err = SetPty(sshSession, term, width, height); err != nil {
+	term := getTerm()
+	if err = setPty(sshSession, term, width, height); err != nil {
 		return err
 	}
 
-	SetInputOutput(sshSession, os.Stdout, os.Stdin, os.Stderr)
-	err = ExecShell(sshSession)
+	setInputOutput(sshSession, os.Stdout, os.Stdin, os.Stderr)
+	err = execShell(sshSession)
 	return err
 }
