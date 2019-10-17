@@ -4,6 +4,14 @@
 
 CLI tool to login ec2 instance.
 
+- You can close the ssh port in the security group.
+- It is not necessary to register the ssh public key.
+- You don't need to know public ip of ec2 instance.
+
+## Architecture
+
+![architecture](documents/images/awssh.png)
+
 ## Install
 
 - Brew
