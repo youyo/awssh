@@ -29,6 +29,28 @@ Other platforms are download from [github release page](https://github.com/youyo
 - `port forwarding with amazon-ssm-agent` must be possible. See https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager.html
 - `session-manager-plugin` command. See https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html
 
+## IAM Policy
+
+```
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "ec2-instance-connect:SendSSHPublicKey",
+                "ssm:StartSession",
+                "ec2:DescribeSubnets",
+                "ec2:DescribeInstances",
+                "ec2:DescribeTags"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
+```
+
+
 ## Usage
 
 ```bash
