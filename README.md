@@ -1,5 +1,7 @@
 # awssh
 
+[![Go Report Card](https://goreportcard.com/badge/github.com/youyo/awssh)](https://goreportcard.com/report/github.com/youyo/awssh)
+
 CLI tool to login ec2 instance.
 
 ## Install
