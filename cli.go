@@ -92,6 +92,10 @@ func Validate(cmd *cobra.Command, args []string) (err error) {
 }
 
 func PreRun(cmd *cobra.Command, args []string) (err error) {
+	if err = checkSessionManagerCommandIsExist(); err != nil {
+		return err
+	}
+
 	guessedPublickey := guessPublickey(
 		viper.GetString("identity-file"),
 		viper.GetString("publickey"),

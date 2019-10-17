@@ -27,3 +27,8 @@ func execSessionManagerPortForwarding(ctx context.Context, tokens, region, sessi
 	time.Sleep(1 * time.Second)
 	return command, err
 }
+
+func checkSessionManagerCommandIsExist() (err error) {
+	err = exec.Command(CmdSessionManagerPlugin, "--version").Run()
+	return err
+}
