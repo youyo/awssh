@@ -25,6 +25,7 @@ _awssh() {
 		'--profile[use a specific profile from your credential file.]' \
 		'(-P --publickey)'{-P,--publickey}'[public key file path.]' \
 		'--select-profile[select a specific profile from your credential file.]' \
+		'--version[version for awssh]' \
 		'--completion-zsh[output shell completion code for the zsh.]'
 }`
 
