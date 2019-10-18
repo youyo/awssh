@@ -12,7 +12,30 @@ import (
 	"github.com/spf13/viper"
 )
 
+const completionZshCode string = `_awssh() {
+	_arguments -w \
+		'(- *)'{-h,--help}'[show help]' \
+		'(-u --username)'{-u,--username}'[ssh login username.]' \
+		'(-p --port)'{-p,--port}'[ssh login port.]' \
+		'--cache[enable cache a credentials.]' \
+		'--duration[cache duration.]' \
+		'(-c --external-command)'{-c,--external-command}'[feature use.]' \
+		'(-i --identity-file)'{-i,--identity-file}'[identity file path.]' \
+		'--profile[use a specific profile from your credential file.]' \
+		'(-P --publickey)'{-P,--publickey}'[public key file path.]' \
+		'--select-profile[select a specific profile from your credential file.]' \
+		'--completion-zsh[output shell completion code for the zsh.]'
+}
+
+compdef _awssh awssh`
+
 func Run(cmd *cobra.Command, args []string) (err error) {
+	completionZsh := viper.GetBool("completion-zsh")
+	if completionZsh {
+		cmd.Println(completionZshCode)
+		return nil
+	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
