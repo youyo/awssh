@@ -12,7 +12,8 @@ import (
 	"github.com/spf13/viper"
 )
 
-const completionZshCode string = `_awssh() {
+const completionZshCode string = `#compdef awssh
+_awssh() {
 	_arguments -w \
 		'(- *)'{-h,--help}'[show help]' \
 		'(-u --username)'{-u,--username}'[ssh login username.]' \
@@ -25,9 +26,7 @@ const completionZshCode string = `_awssh() {
 		'(-P --publickey)'{-P,--publickey}'[public key file path.]' \
 		'--select-profile[select a specific profile from your credential file.]' \
 		'--completion-zsh[output shell completion code for the zsh.]'
-}
-
-compdef _awssh awssh`
+}`
 
 func Run(cmd *cobra.Command, args []string) (err error) {
 	completionZsh := viper.GetBool("completion-zsh")
@@ -115,8 +114,11 @@ func Validate(cmd *cobra.Command, args []string) (err error) {
 }
 
 func PreRun(cmd *cobra.Command, args []string) (err error) {
-	if err = checkSessionManagerCommandIsExist(); err != nil {
-		return err
+	completionZsh := viper.GetBool("completion-zsh")
+	if !completionZsh {
+		if err = checkSessionManagerCommandIsExist(); err != nil {
+			return err
+		}
 	}
 
 	guessedPublickey := guessPublickey(
