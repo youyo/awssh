@@ -13,6 +13,7 @@ import (
 )
 
 const completionZshCode string = `#compdef awssh
+
 _awssh() {
 	_arguments -w \
 		'(- *)'{-h,--help}'[show help]' \
