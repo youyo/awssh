@@ -44,7 +44,6 @@ brews:
     homepage: "https://github.com/youyo/awssh"
     install: |
       bin.install "awssh"
-      output = Utils.popen_read("#{bin}/awssh --completion-zsh")
-      (zsh_completion/"_awssh").write output
+      (zsh_completion/"_awssh").write Utils.popen_read("#{bin}/awssh --completion-zsh")
     test: |
       system "#{bin}/awssh --version"
