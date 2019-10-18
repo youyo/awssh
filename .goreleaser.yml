@@ -20,6 +20,10 @@ archives:
       darwin: Darwin
       linux: Linux
       amd64: x86_64
+    files:
+      - LICENSE
+      - README.md
+      - _awssh
 checksum:
   name_template: 'checksums.txt'
 snapshot:
@@ -44,7 +48,6 @@ brews:
     homepage: "https://github.com/youyo/awssh"
     install: |
       bin.install "awssh"
-      output = `#{bin}/awssh --completion-zsh`
-      (zsh_completion/"_awssh").write output
+      zsh_completion.install '_awssh'
     test: |
       system "#{bin}/awssh --version"

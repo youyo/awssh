@@ -39,7 +39,6 @@ func init() {
 	rootCmd.Flags().Bool("select-profile", false, "select a specific profile from your credential file.")
 	rootCmd.Flags().Bool("cache", false, "enable cache a credentials.")
 	rootCmd.Flags().String("duration", "1 hour", "cache duration.")
-	rootCmd.Flags().Bool("completion-zsh", false, "output shell completion code for the zsh.")
 
 	viper.BindPFlags(rootCmd.Flags())
 }
