@@ -10,6 +10,7 @@ import (
 	"github.com/manifoldco/promptui"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/youyo/awsprofile"
 )
 
 func Run(cmd *cobra.Command, args []string) (err error) {
@@ -104,12 +105,16 @@ func PreRun(cmd *cobra.Command, args []string) (err error) {
 
 	selectProfile := viper.GetBool("select-profile")
 	if selectProfile {
-		c := NewConfig()
-		if err := c.Load(); err != nil {
+		awsProfile := awsprofile.New()
+
+		if err := awsProfile.Parse(); err != nil {
 			return err
 		}
 
-		profiles := c.ListProfiles()
+		profiles, err := awsProfile.ProfileNames()
+		if err != nil {
+			return err
+		}
 
 		prompt := promptui.Select{
 			Label: "Profiles",

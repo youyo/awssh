@@ -13,6 +13,7 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.4.0
 	github.com/ugorji/go/codec v0.0.0-20181204163529-d75b2dcb6bc8 // indirect
+	github.com/youyo/awsprofile v0.0.4
 	golang.org/x/crypto v0.0.0-20191011191535-87dc89f01550
-	gopkg.in/ini.v1 v1.48.0
+	gopkg.in/ini.v1 v1.49.0
 )
