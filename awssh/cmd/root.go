@@ -12,12 +12,13 @@ import (
 var Version string
 
 var rootCmd = &cobra.Command{
-	Use:     "awssh [instance-id]",
-	Short:   "CLI tool to login ec2 instance.",
-	Version: Version,
-	Args:    awssh.Validate,
-	PreRunE: awssh.PreRun,
-	RunE:    awssh.Run,
+	Use:          "awssh [instance-id]",
+	Short:        "CLI tool to login ec2 instance.",
+	Version:      Version,
+	Args:         awssh.Validate,
+	PreRunE:      awssh.PreRun,
+	RunE:         awssh.Run,
+	SilenceUsage: true,
 }
 
 func Execute() {
