@@ -68,7 +68,8 @@ func Run(cmd *cobra.Command, args []string) (err error) {
 		return err
 	}
 
-	err = ExecSshLogin(viper.GetString("username"), ConnectHost, localPort, viper.GetString("identity-file"))
+	cmdSsh, err := execSshCommand(ctx, viper.GetString("username"), ConnectHost, localPort, viper.GetString("identity-file"))
+	cmdSsh.Wait()
 
 	return err
 }
