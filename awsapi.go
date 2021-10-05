@@ -278,3 +278,44 @@ func selectInstance(instances Instances) (instanceID string, err error) {
 
 	return instanceID, nil
 }
+
+func createAMI(ctx context.Context, sess *session.Session, instanceID string) (imageId *string, err error) {
+	t := time.Now()
+	now := t.Format("20060102150405")
+
+	ec2Client := ec2.New(sess)
+	ec2Input := &ec2.CreateImageInput{
+		Description: aws.String("Created by awssh command to auto snapshot. [" + instanceID + "]"),
+		InstanceId:  aws.String(instanceID),
+		Name:        aws.String(instanceID + "_" + now),
+		NoReboot:    aws.Bool(true),
+	}
+	result, err := ec2Client.CreateImageWithContext(ctx, ec2Input)
+	if err != nil {
+		return nil, err
+	}
+
+	imageId = result.ImageId
+
+	input := &ec2.CreateTagsInput{
+		Resources: []*string{
+			imageId,
+		},
+		Tags: []*ec2.Tag{
+			{
+				Key:   aws.String("instance-id"),
+				Value: aws.String(instanceID),
+			},
+			{
+				Key:   aws.String("Created"),
+				Value: aws.String("awssh"),
+			},
+		},
+	}
+
+	if _, err := ec2Client.CreateTags(input); err != nil {
+		return nil, err
+	}
+
+	return imageId, nil
+}
