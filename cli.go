@@ -3,6 +3,7 @@ package awssh
 import (
 	"context"
 	"errors"
+	"fmt"
 	"regexp"
 	"strings"
 
@@ -19,6 +20,7 @@ func Run(cmd *cobra.Command, args []string) (err error) {
 
 	profile := viper.GetString("profile")
 	cache := viper.GetBool("cache")
+	disableSnapshot := viper.GetBool("disable-snapshot")
 	duration, err := duration.Parse(viper.GetString("duration"))
 	if err != nil {
 		return err
@@ -40,6 +42,17 @@ func Run(cmd *cobra.Command, args []string) (err error) {
 		if err != nil {
 			return err
 		}
+	}
+
+	// Get snapshot
+	if disableSnapshot != true {
+		go func() {
+			if imageId, err := createAMI(ctx, awsSession, instanceID); err != nil {
+				fmt.Printf("Failed to create to auto snapshot. error: %T\n", err)
+			} else {
+				fmt.Println("Create AMI ID: " + *imageId)
+			}
+		}()
 	}
 
 	// fetch empty port

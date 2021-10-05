@@ -42,7 +42,9 @@ Other platforms are download from [github release page](https://github.com/youyo
                 "ssm:StartSession",
                 "ec2:DescribeSubnets",
                 "ec2:DescribeInstances",
-                "ec2:DescribeTags"
+                "ec2:DescribeTags",
+                "ec2:CreateImage",
+                "ec2:CreateTags"
             ],
             "Resource": "*"
         }
