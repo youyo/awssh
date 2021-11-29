@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/k1LoW/duration"
 	"github.com/manifoldco/promptui"
@@ -75,11 +76,11 @@ func Run(cmd *cobra.Command, args []string) (err error) {
 	}
 	defer cmdPortForwarding.Process.Kill()
 
-	waitOpenPort(ConnectHost, localPort)
-
 	if err = sendSSHPublicKey(ctx, awsSession, instanceID, viper.GetString("username"), viper.GetString("publicKey")); err != nil {
 		return err
 	}
+
+	time.Sleep(1 * time.Second)
 
 	cmdSsh, err := execSshCommand(ctx, viper.GetString("username"), ConnectHost, localPort, viper.GetString("identity-file"))
 	cmdSsh.Wait()
