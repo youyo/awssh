@@ -21,7 +21,7 @@ func Run(cmd *cobra.Command, args []string) (err error) {
 
 	profile := viper.GetString("profile")
 	cache := viper.GetBool("cache")
-	disableSnapshot := viper.GetBool("disable-snapshot")
+	enableSnapshot := viper.GetBool("enable-snapshot")
 	duration, err := duration.Parse(viper.GetString("duration"))
 	if err != nil {
 		return err
@@ -46,7 +46,7 @@ func Run(cmd *cobra.Command, args []string) (err error) {
 	}
 
 	// Get snapshot
-	if disableSnapshot != true {
+	if enableSnapshot == true {
 		go func() {
 			if imageId, err := createAMI(ctx, awsSession, instanceID); err != nil {
 				fmt.Printf("Failed to create to auto snapshot. error: %T\n", err)
