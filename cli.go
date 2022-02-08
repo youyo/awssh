@@ -22,6 +22,7 @@ func Run(cmd *cobra.Command, args []string) (err error) {
 	profile := viper.GetString("profile")
 	cache := viper.GetBool("cache")
 	enableSnapshot := viper.GetBool("enable-snapshot")
+	portForwardOnly := viper.GetBool("port-forward-only")
 	duration, err := duration.Parse(viper.GetString("duration"))
 	if err != nil {
 		return err
@@ -74,7 +75,9 @@ func Run(cmd *cobra.Command, args []string) (err error) {
 	if err != nil {
 		return err
 	}
-	defer cmdPortForwarding.Process.Kill()
+	if !portForwardOnly {
+		defer cmdPortForwarding.Process.Kill()
+	}
 
 	if err = sendSSHPublicKey(ctx, awsSession, instanceID, viper.GetString("username"), viper.GetString("publicKey")); err != nil {
 		return err
@@ -82,10 +85,15 @@ func Run(cmd *cobra.Command, args []string) (err error) {
 
 	time.Sleep(1 * time.Second)
 
-	cmdSsh, err := execSshCommand(ctx, viper.GetString("username"), ConnectHost, localPort, viper.GetString("identity-file"))
-	cmdSsh.Wait()
+	if portForwardOnly {
+		fmt.Printf("Host: %v\nPort: %v\nIdentityFile: %v\n", ConnectHost, localPort, viper.GetString("identity-file"))
+	} else {
+		cmdSsh, err := execSshCommand(ctx, viper.GetString("username"), ConnectHost, localPort, viper.GetString("identity-file"))
+		cmdSsh.Wait()
+		return err
+	}
 
-	return err
+	return nil
 }
 
 func Validate(cmd *cobra.Command, args []string) (err error) {

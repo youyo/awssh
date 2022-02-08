@@ -41,6 +41,7 @@ func init() {
 	rootCmd.Flags().Bool("cache", false, "enable cache a credentials.")
 	rootCmd.Flags().String("duration", "1 hour", "cache duration.")
 	rootCmd.Flags().Bool("enable-snapshot", false, "enable snapshot.")
+	rootCmd.Flags().BoolP("port-forward-only", "f", false, "Only port-forwarding")
 
 	viper.BindPFlags(rootCmd.Flags())
 }
