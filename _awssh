@@ -12,5 +12,6 @@ _awssh() {
 		'(-i --identity-file)'{-i,--identity-file}'[identity file path.]' \
 		'--profile[use a specific profile from your credential file.]' \
 		'(-P --publickey)'{-P,--publickey}'[public key file path.]' \
+		'(-f --port-forward-only)'{-f,--port-forward-only}'[Only port-forwarding.]' \
 		'--select-profile[select a specific profile from your credential file.]'
 }
